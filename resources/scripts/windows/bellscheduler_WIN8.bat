@@ -1,0 +1,1 @@
+"C:\Program Files (x86)\java\jre7\bin\java.exe" -cp bellrunner.jar;"C:\Program Files (x86)\java\jre7\lib\jfxrt.jar" -Dbell.path=bell.mp3 -Dbell.cron.path=bell.cron org.huebert.cronrunner.BellRunner
