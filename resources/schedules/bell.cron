@@ -1,12 +1,11 @@
 * * * * *
 
-# Warning Bells
-00 08 * * 1-5
-12 08 * * 1-5
+# Morning Bell
+0 17 8 ? * MON,TUE,WED,THU,FRI *
 
 # First Period
-15 08 * * 1-5
-07 09 * * 1,2,3,5
+0 20 8 ? * MON,TUE,WED,THU,FRI *
+0 0 9 ? * MON,TUE,WED,THU,FRI *
 
 # Second Period
 10 09 * * 1,2,3,5
