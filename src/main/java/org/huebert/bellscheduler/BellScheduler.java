@@ -1,5 +1,7 @@
 package org.huebert.bellscheduler;
 
+import com.google.common.base.Preconditions;
+import com.google.common.primitives.Ints;
 import it.sauronsoftware.cron4j.Scheduler;
 
 import java.io.File;
@@ -15,6 +17,11 @@ public class BellScheduler {
     private static final String VERSION = BellScheduler.class.getSimpleName() + " 2.0.0";
 
     /**
+     * Schedule that defines when the cron file should be checked for changes.
+     */
+    private static final String UPDATE_SCHEDULE = "* * * * *";
+
+    /**
      * Main command line program.
      *
      * @param args Command line arguments. None are expected.
@@ -23,9 +30,9 @@ public class BellScheduler {
         System.out.println(VERSION);
 
         /* Check the input arguments */
-        if (args.length != 2) {
+        if (args.length != 3) {
             System.err.println("ERROR: incorrect number of arguments specified");
-            System.err.println("usage: BellRunner [bell wav] [bell cron]");
+            System.err.println("usage: BellRunner [bell wav] [bell cron] [number of sound loops]");
             return;
         }
 
@@ -33,15 +40,21 @@ public class BellScheduler {
         File bellFile = getFile(args[0]);
         File bellCronFile = getFile(args[1]);
 
+        /* Get the number of times to play the sound file in succession */
+        Integer loops = Ints.tryParse(args[2]);
+        if (loops == null) {
+            loops = 1;
+        }
+
         /* Create the cron scheduler */
         Scheduler scheduler = new Scheduler();
 
         /* Create the task that plays the bell sound */
-        BellPlayer bellPlayer = new BellPlayer(bellFile);
+        BellPlayer bellPlayer = new BellPlayer(bellFile, loops);
 
         /* Create the task that schedules tasks based on the cron file */
         BellRescheduler rescheduler = new BellRescheduler(scheduler, bellPlayer, bellCronFile);
-        scheduler.schedule("* * * * *", rescheduler);
+        scheduler.schedule(UPDATE_SCHEDULE, rescheduler);
         rescheduler.run();
 
         /* Start the cron scheduler */
@@ -58,22 +71,15 @@ public class BellScheduler {
         File file = new File(path);
 
         /* Ensure that the file exists */
-        if (!file.exists()) {
-            throw new IllegalArgumentException("\"" + path + "\" does not exist");
-        }
+        Preconditions.checkArgument(file.exists(), "\"" + path + "\" does not exist");
 
         /* Ensure that the file is a file and not a directory */
-        if (!file.isFile()) {
-            throw new IllegalArgumentException("\"" + path + "\" is not a file");
-        }
+        Preconditions.checkArgument(file.isFile(), "\"" + path + "\" is not a file");
 
         /* Ensure that the file can be read */
-        if (!file.canRead()) {
-            throw new IllegalArgumentException("\"" + path + "\" is not readable");
-        }
+        Preconditions.checkArgument(file.canRead(), "\"" + path + "\" is not readable");
 
         return file;
     }
-
 
 }
