@@ -27,7 +27,7 @@ public class BellScheduler {
     /**
      * Program information to print on each invocation.
      */
-    private static final String VERSION = BellScheduler.class.getSimpleName() + " 2.0.0";
+    private static final String VERSION = BellScheduler.class.getSimpleName() + " 2.0.1";
 
     /**
      * Schedule that defines when the cron file should be checked for changes.
