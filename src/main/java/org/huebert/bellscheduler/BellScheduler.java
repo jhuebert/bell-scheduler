@@ -11,6 +11,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -35,11 +36,18 @@ public class BellScheduler {
     private static final int UPDATE_SCHEDULE_SECONDS = 60;
 
     /**
+     * Private constructor.
+     */
+    private BellScheduler() {
+        /* Private constructor */
+    }
+
+    /**
      * Main command line program.
      *
      * @param args Command line arguments. None are expected.
      */
-    public static void main(String... args) throws SchedulerException, InterruptedException {
+    public static void main(String... args) throws SchedulerException {
         System.out.println(VERSION);
 
         /* Check the input arguments */
@@ -62,9 +70,10 @@ public class BellScheduler {
         JobDetail reschedulerJob = newJob(BellRescheduler.class)
                 .withIdentity(RESCHEDULER_JOB_KEY)
                 .build();
-        reschedulerJob.getJobDataMap().put(CRON_FILE, bellCronFile);
-        reschedulerJob.getJobDataMap().put(SOUND_FILE, bellFile);
-        reschedulerJob.getJobDataMap().put(NUM_LOOPS, loops);
+        JobDataMap jobDataMap = reschedulerJob.getJobDataMap();
+        jobDataMap.put(CRON_FILE, bellCronFile);
+        jobDataMap.put(SOUND_FILE, bellFile);
+        jobDataMap.put(NUM_LOOPS, loops);
 
         /* Get the number of seconds between schedule updates */
         Integer scheduleUpdateSeconds =
