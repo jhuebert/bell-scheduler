@@ -6,7 +6,7 @@
 
     <groupId>org.huebert</groupId>
     <artifactId>bell-scheduler</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <version>2.0-SNAPSHOT</version>
 
     <properties>
@@ -87,7 +87,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>org.huebert.bellrunner.BellRunner</mainClass>
+                            <mainClass>org.huebert.bellscheduler.BellScheduler</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

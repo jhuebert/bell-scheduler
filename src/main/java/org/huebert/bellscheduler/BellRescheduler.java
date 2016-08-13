@@ -1,6 +1,7 @@
 package org.huebert.bellscheduler;
 
 import static java.util.stream.Collectors.toSet;
+import static org.huebert.bellscheduler.BellConstants.CRON_FILE;
 import static org.huebert.bellscheduler.BellConstants.PLAYER_JOB_KEY;
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
@@ -38,23 +39,21 @@ public class BellRescheduler implements Job {
         Set<String> currentPatterns = getTriggers(context);
 
         /* Read the updated patterns from the cron file */
-        JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
-        File bellCronFile = Preconditions.checkNotNull((File) jobDataMap.get(BellConstants.CRON_FILE));
-        Set<String> patterns = getPatterns(bellCronFile);
+        Set<String> patterns = getPatterns(context);
 
         /* Remove any scheduled patterns that no longer exist in the cron file */
-        for (String pattern : Sets.difference(currentPatterns, patterns)) {
-            System.out.println("Removing \"" + pattern + "\"");
-            unscheduleJob(context, pattern);
-        }
+        Sets.difference(currentPatterns, patterns).forEach(pattern -> unscheduleJob(context, pattern));
 
         /* Schedule new patterns in the cron file */
-        for (String pattern : Sets.difference(patterns, currentPatterns)) {
-            System.out.println("Adding \"" + pattern + "\"");
-            scheduleJob(context, pattern);
-        }
+        Sets.difference(patterns, currentPatterns).forEach(pattern -> scheduleJob(context, pattern));
     }
 
+    /**
+     * Retrieves the currently scheduled cron patterns.
+     *
+     * @param context Context of the job
+     * @return Set of cron patterns currently scheduled
+     */
     private static Set<String> getTriggers(JobExecutionContext context) {
         try {
             return context.getScheduler().getTriggersOfJob(PLAYER_JOB_KEY).stream()
@@ -67,7 +66,14 @@ public class BellRescheduler implements Job {
         }
     }
 
+    /**
+     * Removes a cron pattern from the schedule.
+     *
+     * @param context Context of the job
+     * @param pattern Pattern to remove
+     */
     private static void unscheduleJob(JobExecutionContext context, String pattern) {
+        System.out.println("Removing \"" + pattern + "\"");
         try {
             context.getScheduler().unscheduleJob(triggerKey(pattern, BellConstants.PLAYER_GROUP));
         } catch (SchedulerException e) {
@@ -75,11 +81,18 @@ public class BellRescheduler implements Job {
         }
     }
 
+    /**
+     * Schedules a new cron pattern.
+     *
+     * @param context Context of the job
+     * @param pattern Pattern to schedule
+     */
     private static void scheduleJob(JobExecutionContext context, String pattern) {
+        System.out.println("Adding \"" + pattern + "\"");
         try {
 
+            /* Add the player job if it hasn't been created yet */
             Scheduler scheduler = context.getScheduler();
-
             if (!scheduler.checkExists(PLAYER_JOB_KEY)) {
                 JobDetail playerJob = newJob(BellPlayer.class)
                         .withIdentity(PLAYER_JOB_KEY)
@@ -89,12 +102,12 @@ public class BellRescheduler implements Job {
                 scheduler.addJob(playerJob, true);
             }
 
+            /* Schedule a trigger for the input cron pattern */
             Trigger trigger = newTrigger()
                     .withIdentity(pattern, BellConstants.PLAYER_GROUP)
                     .forJob(PLAYER_JOB_KEY)
                     .withSchedule(cronSchedule(pattern))
                     .build();
-
             scheduler.scheduleJob(trigger);
 
         } catch (SchedulerException e) {
@@ -105,13 +118,17 @@ public class BellRescheduler implements Job {
     /**
      * Reads the cron patterns from the schedule file.
      *
-     * @param file Path to the cron file
+     * @param context Context of the job
      * @return Set of patterns in the cron file
      */
-    private static Set<String> getPatterns(File file) {
+    private static Set<String> getPatterns(JobExecutionContext context) {
 
         /* Read all of the lines in the cron file. Return an empty set of patterns if the file can't be read. */
         try {
+
+            /* Get the file containing the updated cron patterns */
+            JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
+            File file = Preconditions.checkNotNull((File) jobDataMap.get(CRON_FILE));
 
             /* Parse the file for the patterns while ignoring comment lines */
             return Files.readAllLines(file.toPath()).stream()

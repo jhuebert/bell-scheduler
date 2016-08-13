@@ -1,7 +1,10 @@
 package org.huebert.bellscheduler;
 
+import static org.huebert.bellscheduler.BellConstants.CRON_FILE;
+import static org.huebert.bellscheduler.BellConstants.NUM_LOOPS;
 import static org.huebert.bellscheduler.BellConstants.RESCHEDULER_JOB_KEY;
 import static org.huebert.bellscheduler.BellConstants.RESCHEDULER_TRIGGER_KEY;
+import static org.huebert.bellscheduler.BellConstants.SOUND_FILE;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
@@ -59,12 +62,13 @@ public class BellScheduler {
         JobDetail reschedulerJob = newJob(BellRescheduler.class)
                 .withIdentity(RESCHEDULER_JOB_KEY)
                 .build();
-        reschedulerJob.getJobDataMap().put(BellConstants.CRON_FILE, bellCronFile);
-        reschedulerJob.getJobDataMap().put(BellConstants.SOUND_FILE, bellFile);
-        reschedulerJob.getJobDataMap().put(BellConstants.NUM_LOOPS, loops);
+        reschedulerJob.getJobDataMap().put(CRON_FILE, bellCronFile);
+        reschedulerJob.getJobDataMap().put(SOUND_FILE, bellFile);
+        reschedulerJob.getJobDataMap().put(NUM_LOOPS, loops);
 
         /* Get the number of seconds between schedule updates */
-        Integer scheduleUpdateSeconds = Ints.tryParse(System.getProperty("bellScheduler.scheduleUpdateSeconds", String.valueOf(UPDATE_SCHEDULE_SECONDS)));
+        Integer scheduleUpdateSeconds =
+                Ints.tryParse(System.getProperty("bellScheduler.scheduleUpdateSeconds", String.valueOf(UPDATE_SCHEDULE_SECONDS)));
         if (scheduleUpdateSeconds == null) {
             scheduleUpdateSeconds = UPDATE_SCHEDULE_SECONDS;
         }
