@@ -1,6 +1,10 @@
 package org.huebert.bellscheduler;
 
 import com.google.common.base.Preconditions;
+import org.quartz.Job;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -10,36 +14,24 @@ import javax.sound.sampled.Clip;
 /**
  * Plays the configured bell sound when run.
  */
-class BellPlayer implements Runnable {
-
-    /**
-     * Path to the bell sound.
-     */
-    private final File file;
-
-    /**
-     * Number of times to play the bell sound
-     */
-    private final int loops;
-
-    /**
-     * @param file Path to the bell sound
-     * @param loops Number of times to play the bell sound
-     */
-    BellPlayer(File file, int loops) {
-        this.file = Preconditions.checkNotNull(file);
-        Preconditions.checkArgument(loops > 0);
-        this.loops = loops;
-    }
+public class BellPlayer implements Job {
 
     @Override
-    public void run() {
+    public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
         try {
+
             System.out.println("Running bell - " + LocalDateTime.now());
+
+            JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
+            File file = Preconditions.checkNotNull((File) jobDataMap.get(BellConstants.SOUND_FILE));
+            int loops = Preconditions.checkNotNull((Integer) jobDataMap.get(BellConstants.NUM_LOOPS));
+            Preconditions.checkArgument(loops > 0);
+
             Clip clip = AudioSystem.getClip();
             clip.open(AudioSystem.getAudioInputStream(file));
             clip.loop(loops - 1);
             clip.start();
+
         } catch (Exception e) {
             e.printStackTrace();
         }

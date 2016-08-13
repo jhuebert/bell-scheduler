@@ -1,8 +1,18 @@
 package org.huebert.bellscheduler;
 
+import static org.huebert.bellscheduler.BellConstants.RESCHEDULER_JOB_KEY;
+import static org.huebert.bellscheduler.BellConstants.RESCHEDULER_TRIGGER_KEY;
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
+
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
-import it.sauronsoftware.cron4j.Scheduler;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
+import org.quartz.impl.StdSchedulerFactory;
 
 import java.io.File;
 
@@ -19,14 +29,14 @@ public class BellScheduler {
     /**
      * Schedule that defines when the cron file should be checked for changes.
      */
-    private static final String UPDATE_SCHEDULE = "* * * * *";
+    private static final int UPDATE_SCHEDULE_SECONDS = 60;
 
     /**
      * Main command line program.
      *
      * @param args Command line arguments. None are expected.
      */
-    public static void main(String... args) {
+    public static void main(String... args) throws SchedulerException, InterruptedException {
         System.out.println(VERSION);
 
         /* Check the input arguments */
@@ -43,17 +53,35 @@ public class BellScheduler {
         Preconditions.checkArgument(loops > 0, "Number of bell loops must be at least 1");
 
         /* Create the cron scheduler */
-        Scheduler scheduler = new Scheduler();
+        Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
 
-        /* Create the task that plays the bell sound */
-        BellPlayer bellPlayer = new BellPlayer(bellFile, loops);
+        /* Create the job that schedules tasks based on the cron file */
+        JobDetail reschedulerJob = newJob(BellRescheduler.class)
+                .withIdentity(RESCHEDULER_JOB_KEY)
+                .build();
+        reschedulerJob.getJobDataMap().put(BellConstants.CRON_FILE, bellCronFile);
+        reschedulerJob.getJobDataMap().put(BellConstants.SOUND_FILE, bellFile);
+        reschedulerJob.getJobDataMap().put(BellConstants.NUM_LOOPS, loops);
 
-        /* Create the task that schedules tasks based on the cron file */
-        BellRescheduler rescheduler = new BellRescheduler(scheduler, bellPlayer, bellCronFile);
-        scheduler.schedule(UPDATE_SCHEDULE, rescheduler);
-        rescheduler.run();
+        /* Get the number of seconds between schedule updates */
+        Integer scheduleUpdateSeconds = Ints.tryParse(System.getProperty("bellScheduler.scheduleUpdateSeconds", String.valueOf(UPDATE_SCHEDULE_SECONDS)));
+        if (scheduleUpdateSeconds == null) {
+            scheduleUpdateSeconds = UPDATE_SCHEDULE_SECONDS;
+        }
 
-        /* Start the cron scheduler */
+        /* Create the trigger to check for schedule updates */
+        Trigger reschedulerTrigger = newTrigger()
+                .withIdentity(RESCHEDULER_TRIGGER_KEY)
+                .startNow()
+                .withSchedule(simpleSchedule()
+                        .withIntervalInSeconds(scheduleUpdateSeconds)
+                        .repeatForever())
+                .build();
+
+        /* Add the reschedule job/trigger */
+        scheduler.scheduleJob(reschedulerJob, reschedulerTrigger);
+
+        /* Start the scheduler */
         scheduler.start();
     }
 
@@ -75,7 +103,7 @@ public class BellScheduler {
         /* Ensure that the file can be read */
         Preconditions.checkArgument(file.canRead(), "\"" + path + "\" is not readable");
 
-        //TODO We could potentially copy the file to a temp directory to prevent the file server from being hit too hard
+        //TODO We could potentially copy the bell file to a temp directory to prevent the file server from being hit too hard
 
         return file;
     }
