@@ -26,15 +26,12 @@ public class BellScheduler {
      *
      * @param args Command line arguments. None are expected.
      */
-    public static void main(String[] args) {
+    public static void main(String... args) {
         System.out.println(VERSION);
 
         /* Check the input arguments */
-        if (args.length != 3) {
-            System.err.println("ERROR: incorrect number of arguments specified");
-            System.err.println("usage: BellRunner [bell wav] [bell cron] [number of sound loops]");
-            return;
-        }
+        Preconditions.checkArgument(args.length == 3, "Incorrect number of arguments specified.\n"
+                + "Usage: BellRunner [bell wav] [bell cron] [number of bell loops]");
 
         /* Get the file paths */
         File bellFile = getFile(args[0]);
@@ -42,9 +39,8 @@ public class BellScheduler {
 
         /* Get the number of times to play the sound file in succession */
         Integer loops = Ints.tryParse(args[2]);
-        if (loops == null) {
-            loops = 1;
-        }
+        Preconditions.checkNotNull(loops, "Number of bell loops is not a number");
+        Preconditions.checkArgument(loops > 0, "Number of bell loops must be at least 1");
 
         /* Create the cron scheduler */
         Scheduler scheduler = new Scheduler();
@@ -68,7 +64,7 @@ public class BellScheduler {
      * @return File
      */
     private static File getFile(String path) {
-        File file = new File(path);
+        File file = new File(Preconditions.checkNotNull(path, "Path is null"));
 
         /* Ensure that the file exists */
         Preconditions.checkArgument(file.exists(), "\"" + path + "\" does not exist");
@@ -78,6 +74,8 @@ public class BellScheduler {
 
         /* Ensure that the file can be read */
         Preconditions.checkArgument(file.canRead(), "\"" + path + "\" is not readable");
+
+        //TODO We could potentially copy the file to a temp directory to prevent the file server from being hit too hard
 
         return file;
     }

@@ -1,17 +1,18 @@
 package org.huebert.bellscheduler;
 
+import static java.util.stream.Collectors.toSet;
+
 import com.google.common.collect.Sets;
 import it.sauronsoftware.cron4j.Scheduler;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -81,22 +82,18 @@ class BellRescheduler implements Runnable {
     private static Set<String> getPatterns(File file) {
 
         /* Read all of the lines in the cron file. Return an empty set of patterns if the file can't be read. */
-        List<String> lines;
         try {
-            lines = Files.readAllLines(file.toPath(), Charset.defaultCharset());
+
+            /* Parse the file for the patterns while ignoring comment lines */
+            return Files.readAllLines(file.toPath()).stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(expression -> !expression.isEmpty())
+                    .filter(expression -> !expression.startsWith("#"))
+                    .collect(toSet());
+
         } catch (IOException e) {
             return Collections.emptySet();
         }
-
-        /* Parse the file for the patterns while ignoring comment lines */
-        Set<String> patterns = new HashSet<>();
-        for (String line : lines) {
-            String expression = line.trim();
-            if (!expression.isEmpty() && !expression.startsWith("#")) {
-                patterns.add(expression);
-            }
-        }
-
-        return patterns;
     }
 }

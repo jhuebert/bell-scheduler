@@ -6,8 +6,6 @@ import java.io.File;
 import java.time.LocalDateTime;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
-import javax.sound.sampled.LineEvent;
-import javax.sound.sampled.LineListener;
 
 /**
  * Plays the configured bell sound when run.
@@ -40,19 +38,10 @@ class BellPlayer implements Runnable {
             System.out.println("Running bell - " + LocalDateTime.now());
             Clip clip = AudioSystem.getClip();
             clip.open(AudioSystem.getAudioInputStream(file));
-            clip.loop(loops);
-            clip.addLineListener(new BellPlayerLineListener());
+            clip.loop(loops - 1);
             clip.start();
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    private static class BellPlayerLineListener implements LineListener {
-
-        @Override
-        public void update(LineEvent event) {
-            System.out.println(event.toString());
         }
     }
 }
