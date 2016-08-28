@@ -60,7 +60,7 @@ public class BellRescheduler implements Job {
                     .map(Trigger::getKey)
                     .map(Key::getName)
                     .collect(toSet());
-        } catch (SchedulerException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptySet();
         }
@@ -76,7 +76,7 @@ public class BellRescheduler implements Job {
         System.out.println("Removing \"" + pattern + "\"");
         try {
             context.getScheduler().unscheduleJob(triggerKey(pattern, BellConstants.PLAYER_GROUP));
-        } catch (SchedulerException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -110,7 +110,7 @@ public class BellRescheduler implements Job {
                     .build();
             scheduler.scheduleJob(trigger);
 
-        } catch (SchedulerException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -138,7 +138,7 @@ public class BellRescheduler implements Job {
                     .filter(expression -> !expression.startsWith("#"))
                     .collect(toSet());
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptySet();
         }
